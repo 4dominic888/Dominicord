@@ -1,5 +1,6 @@
 //const {token} = require('./config.json');
-const prefix = "dominic";
+const datos = require('../../config.json');
+const prefix = datos.prefix;
 module.exports = async(client, discord, message) => {
     if(!message.author.bot){
     const argumentos = message.content.slice(prefix.length).trim().split(/ +/);
