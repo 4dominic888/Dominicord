@@ -30,7 +30,7 @@ module.exports = {
         for (const i of argumentos) { texto += i.trim().toLowerCase() + " ";}
 
         for (const key in listaPiedra) {
-            if(texto.includes(key.toLowerCase().trim())){
+            if(texto.toLocaleLowerCase().trim() === key){
                 message.reply(listaPiedra[key]);
                 return;
             }

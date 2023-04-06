@@ -42,7 +42,6 @@ module.exports = {
         let texto = " ";
         for (const i of argumentos) { texto += i.trim().toLowerCase() + " ";}
         let indice = randomNumero(0, siNoMensajes.length-1);
-        console.log(indice);
 
         const me8ball = new EmbedBuilder()
         .setColor("Grey")

@@ -25,10 +25,13 @@ const IMGDominicord = "https://cdn.discordapp.com/attachments/105909387350849132
 //#endregion
 let ayudaComandos = {
     "Hola" : "Te saluda el bot, no tiene mucha historia este comando.",
-    "Meme" : "Te manda puro meme robado de manera aleatoria.",
+    "Meme" : "Te manda puro meme robado.\n**Variaciones**: MemeAgregar\n*Estas variaciones tienen su propio comando ayuda*",
+    "MemeAgregar" : "Agregas memes para que el bot siga almacenandolos por la eternidad... supongo",
     "DiAgregar" : "Recomiendas una palabra a dominic para que con el comando \"di\" lo diga",
+    "DiEditar" : "Editas una palabra a dominic para que con el comando \"di\" lo diga",
+    "DiLista" : "Te muestra la lista de las palabras agregadas",
     "Di"   : "coloca \"dominic di {texto}\", te pondrá una mamada o dirá que no sabe como responder.\n" + 
-             "**Variaciones:**: DiAgregar\n" + 
+             "**Variaciones:**: DiAgregar, **DiEditar**, **DiLista**\n" + 
              "*Estas variaciones tienen su propio comando ayuda*",
     "8ball" : "Si tienes una pregunta, la haces y te responderá. Solo se admiten preguntas binarias de si y no",
 }

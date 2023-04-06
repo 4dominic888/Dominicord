@@ -8,9 +8,9 @@ const client  = new discord.Client({intents: [
   'MessageContent'
 ]});
 
-
 //* Base de datos
 const mongoose = require("mongoose");
+const messageCreate = require("./eventos/guild/messageCreate");
 mongoose.set('strictQuery', false);
 
 mongoose.connect(datos.baseDatos,)
