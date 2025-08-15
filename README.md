@@ -29,3 +29,9 @@ Los permisos por defecto son:
 ### Music
 
 Para habilitar este módulo, es necesario crear una carpeta `shared/music` y agregar algunas canciones en formato mp3.
+Cabe aclarar que se necesita tener algunas carpetas con algún nombre, estas serviran como playlists.
+
+Finalmente ejecuta esto
+```bash
+pip install -r requirements.txt
+```
