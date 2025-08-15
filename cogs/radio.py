@@ -1,6 +1,6 @@
 import os
 import random
-from typing import Optional
+from typing import Optional, Literal
 
 import discord
 from discord.ext import commands
@@ -64,12 +64,7 @@ class Radio(commands.Cog):
 
 
     @commands.hybrid_command(name="playplaylist", description="Reproduce una playlist en orden alfabetico o aleatorio")
-    @app_commands.describe(mode="Selecciona un modo")
-    @app_commands.choices(mode=[
-        app_commands.Choice(name="Alfabeticamente", value="normal"),
-        app_commands.Choice(name="Randomizado", value="random")
-    ])
-    async def play_playlist(self, ctx: commands.Context, playlist_name: str, mode: app_commands.Choice[str]):
+    async def play_playlist(self, ctx: commands.Context, playlist_name: str, mode: Literal["normal", "random"]):
         in_a_voice_channel = await self._is_there_in_a_voice_channel(ctx)
         if not in_a_voice_channel: return
 
@@ -96,7 +91,7 @@ class Radio(commands.Cog):
             return
 
         # * Mode control
-        if mode.value == "random": random.shuffle(songs)
+        if mode == "random": random.shuffle(songs)
         else: songs.sort()
 
         queue = self.get_queue(ctx.guild.id)
