@@ -1,3 +1,4 @@
+import datetime
 import os
 import random
 import discord
@@ -15,6 +16,7 @@ class QueueElement(NamedTuple):
     user_name: str
     music_requested: str
     path_music: str
+    timestamp: datetime.date
 
 class Radio(commands.Cog):
     def __init__(self, bot):
@@ -35,22 +37,24 @@ class Radio(commands.Cog):
 
     def get_current(self) -> Optional[QueueElement]: return self.current
 
-    async def set_current(self, queue_element: Optional[QueueElement], ctx: commands.Context):
+    async def set_current(self, queue_element: Optional[QueueElement], ctx: commands.Context, omit_message: bool = False):
         """
         Sets the current queue to the queue_element and give a message
         :param queue_element: The elemento to put
+        :param omit_message: omit the message about what is playing about
         :param ctx:
         :return:
         """
         self.current = queue_element
         if queue_element is not None:
-            await ctx.send(
-                embed=discord.Embed(
-                    title="Reproduciendo",
-                    description=queue_element.music_requested,
-                    color=discord.Color.dark_gray()
-                ).set_footer(text=f"Pedido por {queue_element.user_name}")
-            )
+            if not omit_message:
+                await ctx.send(
+                    embed=discord.Embed(
+                        title="Reproduciendo",
+                        description=queue_element.music_requested,
+                        color=discord.Color.dark_gray()
+                    ).set_footer(text=f"Pedido por {queue_element.user_name}")
+                )
 
     # * Play the music
     async def play_next(self, ctx: commands.Context, voice_client: discord.VoiceClient):
@@ -111,7 +115,7 @@ class Radio(commands.Cog):
         leave_operation_successful = await VoiceManager.leave_voice_channel(ctx)
         if leave_operation_successful:
             self.set_queue([]) # * Empty the queue
-            await self.set_current(None, ctx) # * Clean current value as None
+            await self.set_current(None, ctx, omit_message=True) # * Clean current value as None
 
 
     @commands.hybrid_group(name="play")
@@ -152,9 +156,10 @@ class Radio(commands.Cog):
         queue = self.get_queue()
         queue.extend([QueueElement(
             user_id = str(ctx.author.id),
-            music_requested = os.path.basename(qe),
+            music_requested = os.path.splitext(os.path.basename(qe))[0],
             path_music = qe,
-            user_name=ctx.author.name
+            user_name=ctx.author.name,
+            timestamp=datetime.date.today()
         ) for qe in songs])
 
         await ctx.send(embed=discord.Embed(
@@ -183,9 +188,10 @@ class Radio(commands.Cog):
         queue.append(
             QueueElement(
                 user_id = str(ctx.author.id),
-                music_requested = music_requested,
+                music_requested = os.path.splitext(music_requested)[0],
                 path_music = os.path.join(playlist_folder_path, music_requested),
-                user_name=ctx.author.name
+                user_name=ctx.author.name,
+                timestamp=datetime.date.today()
             )
         )
 
@@ -210,6 +216,20 @@ class Radio(commands.Cog):
                 color = discord.Color.orange()
             ))
 
+    @commands.hybrid_command(name="resume", description="Continua cualquier música recientemente pausada")
+    async def resume(self, ctx: commands.Context):
+        in_the_same_voice_channel = await PermissionHandler.check_same_in_voice(ctx)
+        if not in_the_same_voice_channel: return
+
+        voice_client: Optional[discord.VoiceClient] = ctx.voice_client
+        if voice_client and voice_client.is_paused():
+            voice_client.resume()
+            await ctx.send(embed=discord.Embed(
+                title="YEY",
+                description="GRACIAS POR REANUDAR DOMINICORD.FM",
+                color = discord.Color.green()
+            ))
+
     @commands.hybrid_command(name="skip", description="Salta a la siguiente canción de la cola")
     async def skip(self, ctx: commands.Context):
         in_the_same_voice_channel = await PermissionHandler.check_same_in_voice(ctx)
@@ -218,8 +238,6 @@ class Radio(commands.Cog):
         voice_client: Optional[discord.VoiceClient] = ctx.voice_client
         if voice_client and voice_client.is_playing():
             voice_client.stop()
-            queue = self.get_queue()
-            await self.set_current(queue.pop(0), ctx)
             await ctx.message.add_reaction("⏭️")
         else:
             await ctx.send(embed=discord.Embed(
@@ -301,10 +319,11 @@ class Radio(commands.Cog):
             bot=self.bot,
             title="Lista de rolas en la cola",
             data=queue,
-            for_each_field_name=lambda queue_el: f"**{queue.index(queue_el) or "?"}** {queue_el.user_name}",
-            for_each_field_value=lambda queue_el: queue_el.music_requested,
+            for_each_field_name=lambda queue_el: f"{queue.index(queue_el) or "▶"} | {queue_el.music_requested}",
+            for_each_field_value=lambda queue_el: queue_el.user_name,
             page=page
         )
+
 
     @commands.hybrid_command(name="current", description="Ver la canción reproduciendose ahora mismo")
     async def current(self, ctx: commands.Context):
@@ -339,7 +358,19 @@ class Radio(commands.Cog):
             queue.insert(0, element)
             await ctx.send(embed=discord.Embed(
                 title=f"{element.music_requested} puesto primero a escuchar... que tramposo que sos",
-                description=f"La rola se escuchará después de {self.get_current().music_requested}",
+                description=f"La rola se escuchará después de\n\n {self.get_current().music_requested}",
+            ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
+
+    @commands.hybrid_command(name="remove", description="Elimina una canción de la cola")
+    async def remove(self, ctx: commands.Context, index: int):
+        in_the_same_voice_channel = await PermissionHandler.check_same_in_voice(ctx)
+        if not in_the_same_voice_channel: return
+
+        queue = self.get_queue()
+        if 0 <= index < len(queue):
+            element = queue.pop(index)
+            await ctx.send(embed=discord.Embed(
+                title=f"{element.music_requested} | eliminado de la cola ",
             ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
 
 
