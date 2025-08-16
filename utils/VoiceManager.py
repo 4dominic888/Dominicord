@@ -26,7 +26,7 @@ class VoiceManager:
 
         channel = ctx.author.voice.channel
 
-        bot_in_voice_channel = await PermissionHandler.check_bot_in_voice(ctx)
+        bot_in_voice_channel = await PermissionHandler.check_bot_in_voice(ctx, omit_warn=True)
         if bot_in_voice_channel:
             we_are_in_same_channel = await PermissionHandler.check_same_in_voice(ctx)
             if we_are_in_same_channel:

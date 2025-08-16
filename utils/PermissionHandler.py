@@ -19,18 +19,20 @@ class PermissionHandler:
         return True
 
     @staticmethod
-    async def check_bot_in_voice(ctx: commands.Context) -> bool:
+    async def check_bot_in_voice(ctx: commands.Context, omit_warn: bool = False) -> bool:
         """
         Checks if the bot is in a voice channel.
         :param ctx:
+        :param omit_warn: Omit the warn
         :return: True if the bot is in a voice channel, False otherwise
         """
         if ctx.voice_client is None or ctx.voice_client.channel is None:
-            await ctx.send(embed=discord.Embed(
-                title="⚠️ Yo (Dominicord) no esta en un canal de voz",
-                description="Invitame a entrar AL MENOS NO?",
-                color=discord.Color.orange()
-            ))
+            if not omit_warn:
+                await ctx.send(embed=discord.Embed(
+                    title="⚠️ Yo (Dominicord) no esta en un canal de voz",
+                    description="Invitame a entrar AL MENOS NO?",
+                    color=discord.Color.orange()
+                ))
             return False
         return True
 
