@@ -79,7 +79,7 @@ class PaginationManager:
                     embed = discord.Embed(
                         title=title,
                         color=discord.Color.blurple(),
-                    ).set_footer(text=f"(Página {page}/{total_pages})")
+                    ).set_footer(text=f"(Página {current_page}/{total_pages})")
 
                     for dp in data_page:
                         embed.add_field(name=for_each_field_name(dp), value=for_each_field_value(dp), inline=False)
