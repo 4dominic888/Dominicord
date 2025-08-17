@@ -1,11 +1,30 @@
 import os
+import traceback
 from discord.ext import commands
 import config
 
 bot = commands.Bot(
-    command_prefix=config.PREFIX,
+    command_prefix=f"{config.PREFIX} ",
     intents=config.intents
 )
+
+@bot.event
+async def on_command_error(ctx: commands.Context, error: commands.CommandError):
+    """
+    Called when a command error is raised.
+    :param ctx:
+    :param error:
+    :return:
+    """
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f"Faltan argumentos w: {error.param.name}")
+    elif isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"NO TENGO PERMISOS PARA ESTO: {error.missing_permissions}")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("Un argumento fue invalido? QUE, ESCRE$IVE VIEN")
+    else:
+        await ctx.send(f"No se que paso: {type(error).__name__}")
+        traceback.print_exception(type(error), error, error.__traceback__)
 
 @bot.event
 async def on_ready():
