@@ -1,16 +1,80 @@
-import traceback
-from typing import Callable
+from typing import Callable, TypeVar
 
 import discord
-from discord import Client
 from discord.ext import commands
+from discord import ButtonStyle, InteractionResponse
+
+T = TypeVar("T")
+
+class PaginationView(discord.ui.View):
+    def __init__(
+        self,
+        ctx: commands.Context,
+        data: list[T],
+        title: str,
+        for_each_field_name: Callable[[T], str],
+        for_each_field_value: Callable[[T], str],
+        page_size: int = 10,
+        start_page: int = 1
+    ):
+        super().__init__(timeout=60)
+        self.ctx = ctx
+        self.data = data
+        self.title = title
+        self.for_each_field_name = for_each_field_name
+        self.for_each_field_value = for_each_field_value
+        self.page_size = page_size
+        self.total_pages = max(1, (len(data) + page_size - 1) // page_size)
+        self.current_page = max(1, min(start_page, self.total_pages))
+
+        self.update_buttons()
+
+    def build_embed(self) -> discord.Embed:
+        start = (self.current_page - 1) * self.page_size
+        end = start + self.page_size
+        data_page = self.data[start:end]
+
+        embed = discord.Embed(
+            title=self.title,
+            color=discord.Color.blurple()
+        )
+        embed.set_footer(text=f"(Página {self.current_page}/{self.total_pages})")
+
+        for dp in data_page:
+            embed.add_field(
+                name=self.for_each_field_name(dp),
+                value=self.for_each_field_value(dp),
+                inline=False
+            )
+
+        return embed
+
+    def update_buttons(self):
+        self.previous_page.disabled = (self.current_page <= 1)
+        self.next_page.disabled = (self.current_page >= self.total_pages)
+
+    async def update_message(self, interaction: discord.Interaction):
+        response: InteractionResponse = interaction.response
+        self.update_buttons()
+        await response.edit_message(embed=self.build_embed(), view=self)
+
+    @discord.ui.button(label="⬅️", style=ButtonStyle.primary)
+    async def previous_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_page > 1:
+            self.current_page -= 1
+            await self.update_message(interaction)
+
+    @discord.ui.button(label="➡️", style=ButtonStyle.primary)
+    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+            await self.update_message(interaction)
 
 class PaginationManager:
     page_size: int = 10
     @staticmethod
     async def builder[T](
             ctx: commands.Context,
-            bot: Client,
             data: list[T],
             title: str,
             for_each_field_name: Callable[[T],str],
@@ -20,7 +84,6 @@ class PaginationManager:
         """
         Create a builder refrescable pagination
         :param ctx: commands.Context
-        :param bot: The client
         :param data: The list with the data to paginate
         :param title: The title of the message
         :param for_each_field_name: The way to print each field name from the **data** list in **embed.add_field**
@@ -28,66 +91,16 @@ class PaginationManager:
         :param page: The current page from the pagination
         :return:
         """
-        page_size = PaginationManager.page_size
-        total_pages = (len(data) + page_size) // page_size
-        page = max(1, min(page, total_pages))
-        start = (page - 1) * page_size
-        end = start + page_size
-        data_page = data[start:end]
 
-        embed = discord.Embed(
-            title=title,
-            color=discord.Color.blurple(),
-        ).set_footer(text=f"(Página {page}/{total_pages})")
+        view = PaginationView(
+            ctx,
+            data,
+            title,
+            for_each_field_name,
+            for_each_field_value,
+            page_size=PaginationManager.page_size,
+            start_page=page
+        )
 
-        for dp in data_page:
-            embed.add_field(name=for_each_field_name(dp), value=for_each_field_value(dp), inline=False)
-
-        message = await ctx.send(embed=embed)
-
-        if total_pages > 1:
-            def check(c_reaction, c_user): return (
-                c_user == ctx.author and str(c_reaction.emoji) in ["⬅️", "➡️"]
-                and c_reaction.message.id == message.id
-            )
-
-            current_page = page
-
-            while True:
-                try:
-                    await message.clear_reactions()
-
-                    if current_page == 1: await message.add_reaction("➡️")
-                    elif current_page == total_pages: await message.add_reaction("⬅️")
-                    else:
-                        await message.add_reaction("⬅️")
-                        await message.add_reaction("➡️")
-
-                    reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=check)
-                    if str(reaction.emoji) == "➡️" and current_page < total_pages:
-                        current_page += 1
-                    elif str(reaction.emoji) == "⬅️" and current_page > 1:
-                        current_page -= 1
-                    else:
-                        await message.remove_reaction(reaction, user)
-                        continue
-
-                    start = (current_page - 1) * page_size
-                    end = start + page_size
-                    data_page = data[start:end]
-
-                    embed = discord.Embed(
-                        title=title,
-                        color=discord.Color.blurple(),
-                    ).set_footer(text=f"(Página {current_page}/{total_pages})")
-
-                    for dp in data_page:
-                        embed.add_field(name=for_each_field_name(dp), value=for_each_field_value(dp), inline=False)
-
-                    await message.edit(embed=embed)
-                    await message.remove_reaction(reaction, user)
-                except Exception as e:
-                    await message.clear_reactions()
-                    print(e)
-                    traceback.print_exception(type(e), e, e.__traceback__)
-                    break
+        embed = view.build_embed()
+        await ctx.send(embed=embed, view=view)

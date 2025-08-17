@@ -294,7 +294,6 @@ class Radio(commands.Cog):
 
         await PaginationManager.builder(
             ctx=ctx,
-            bot=self.bot,
             title=f"🎶 Resultados de búsqueda {music_name or "-*general*-"} en 📂 {playlist_name}",
             data=songs,
             for_each_field_name=lambda s: f"♪ {s}",
@@ -316,7 +315,6 @@ class Radio(commands.Cog):
 
         await PaginationManager.builder(
             ctx=ctx,
-            bot=self.bot,
             title="Lista de rolas en la cola",
             data=queue,
             for_each_field_name=lambda queue_el: f"{queue.index(queue_el) or "▶"} | {queue_el.music_requested}",
