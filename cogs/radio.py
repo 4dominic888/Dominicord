@@ -4,9 +4,9 @@ import random
 import discord
 from discord.ext import commands
 from discord import FFmpegPCMAudio
-from utils.PaginationManager import PaginationManager
-from utils.VoiceManager import VoiceManager
-from utils.PermissionHandler import PermissionHandler
+from utils.pagination_manager import PaginationManager
+from utils.voice_manager import VoiceManager
+from utils.permission_handler import PermissionHandler
 from typing import Optional, Literal, NamedTuple
 
 PLAYLIST_FOLDER = "./shared/music"

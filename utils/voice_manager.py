@@ -3,7 +3,7 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from utils.PermissionHandler import PermissionHandler
+from utils.permission_handler import PermissionHandler
 
 
 class VoiceManager:
