@@ -238,7 +238,12 @@ class Radio(commands.Cog):
         voice_client: Optional[discord.VoiceClient] = ctx.voice_client
         if voice_client and voice_client.is_playing():
             voice_client.stop()
-            await ctx.message.add_reaction("⏭️")
+            if not ctx.interaction:
+                await ctx.message.add_reaction("⏭️")
+
+            await ctx.send(embed=discord.Embed(
+                title="SALTEANDO..."
+            ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
         else:
             await ctx.send(embed=discord.Embed(
                 title="❌ Error",
@@ -335,7 +340,7 @@ class Radio(commands.Cog):
                     title="Reproduciendo",
                     description=current.music_requested,
                     color=discord.Color.dark_gray()
-                ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url)
+                ).set_author(name=f"Agregado a la cola por {current.user_name}")
             )
         else:
             await ctx.send(
@@ -355,7 +360,7 @@ class Radio(commands.Cog):
             element = queue.pop(index)
             queue.insert(0, element)
             await ctx.send(embed=discord.Embed(
-                title=f"{element.music_requested} puesto primero a escuchar... que tramposo que sos",
+                title=f"*{element.music_requested}*, puesto primero a escuchar... que tramposo que sos",
                 description=f"La rola se escuchará después de\n\n {self.get_current().music_requested}",
             ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
 
@@ -367,9 +372,14 @@ class Radio(commands.Cog):
         queue = self.get_queue()
         if 0 <= index < len(queue):
             element = queue.pop(index)
+            await ctx.send(embed=discord.Embed(title=element.music_requested)
+                .set_footer(text="Eliminado de la cola")
+                .set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
+        else:
             await ctx.send(embed=discord.Embed(
-                title=f"{element.music_requested} | eliminado de la cola ",
-            ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
+                title="Indice no encontrado en la cola",
+                description="Intenta colocar un indice dentro de la cola"
+            ))
 
 
 async def setup(bot):
