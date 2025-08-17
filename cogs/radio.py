@@ -294,7 +294,7 @@ class Radio(commands.Cog):
 
         await PaginationManager.builder(
             ctx=ctx,
-            title=f"🎶 Resultados de búsqueda {music_name or "-*general*-"} en 📂 {playlist_name}",
+            title=f"🎶 Resultados de búsqueda {f"\"{music_name}\"" or "general"} en 📂 {playlist_name}",
             data=songs,
             for_each_field_name=lambda s: f"♪ {s}",
             for_each_field_value=lambda _: "",
