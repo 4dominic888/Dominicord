@@ -317,7 +317,7 @@ class Radio(commands.Cog):
             ctx=ctx,
             title="Lista de rolas en la cola",
             data=queue,
-            for_each_field_name=lambda queue_el: f"{queue.index(queue_el) or "▶"} | {queue_el.music_requested}",
+            for_each_field_name=lambda queue_el: f"{queue.index(queue_el) or "NEXT"} | {queue_el.music_requested}",
             for_each_field_value=lambda queue_el: queue_el.user_name,
             page=page
         )
