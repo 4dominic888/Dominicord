@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 from discord import FFmpegPCMAudio
 
-from constant import PLAYLIST_FOLDER
+from constant import PLAYLIST_FOLDER, MUSIC_ALLOWED_EXTENSIONS
 from utils.pagination_manager import PaginationManager
 from utils.voice_manager import VoiceManager
 from utils.permission_handler import PermissionHandler
@@ -136,7 +136,7 @@ class Radio(commands.Cog):
         playlist_folder_path = os.path.join(PLAYLIST_FOLDER, playlist_name)
         songs = [
             os.path.join(playlist_folder_path, f) for f in
-                os.listdir(playlist_folder_path) if f.endswith(".mp3")
+                os.listdir(playlist_folder_path) if f.lower().endswith(tuple(MUSIC_ALLOWED_EXTENSIONS))
         ]
         songs_length = len(songs)
 
@@ -281,7 +281,7 @@ class Radio(commands.Cog):
 
         # * Find all the songs first...
         for f in os.listdir(playlist_folder_path):
-            if f.endswith(".mp3"): songs.append(os.path.basename(f))
+            if f.lower().endswith(tuple(MUSIC_ALLOWED_EXTENSIONS)): songs.append(os.path.basename(f))
 
         # * Filter songs by name
         if music_name:
