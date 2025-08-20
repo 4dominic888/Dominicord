@@ -56,8 +56,7 @@ class PermissionHandler:
         :param ctx:
         :return: True if the user is in the same voice channel, False otherwise
         """
-        one_is_not_in_a_voice_channel: bool = ctx.voice_client is None or ctx.voice_client is None
-        not_in_the_same_voice_channel: bool = ctx.author.voice.channel != ctx.voice_client.channel
+        one_is_not_in_a_voice_channel: bool = ctx.voice_client is None or ctx.author.voice is None
 
         if one_is_not_in_a_voice_channel:
             await ctx.send(embed=discord.Embed(
@@ -66,6 +65,8 @@ class PermissionHandler:
                 color=discord.Color.orange()
             ))
             return False
+
+        not_in_the_same_voice_channel: bool = ctx.author.voice.channel != ctx.voice_client.channel
 
         if not_in_the_same_voice_channel:
             await ctx.send(embed=discord.Embed(

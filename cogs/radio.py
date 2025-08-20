@@ -4,12 +4,12 @@ import random
 import discord
 from discord.ext import commands
 from discord import FFmpegPCMAudio
+
+from constant import PLAYLIST_FOLDER, MUSIC_ALLOWED_EXTENSIONS
 from utils.pagination_manager import PaginationManager
 from utils.voice_manager import VoiceManager
 from utils.permission_handler import PermissionHandler
 from typing import Optional, Literal, NamedTuple
-
-PLAYLIST_FOLDER = "./shared/music"
 
 class QueueElement(NamedTuple):
     user_id: str
@@ -136,7 +136,7 @@ class Radio(commands.Cog):
         playlist_folder_path = os.path.join(PLAYLIST_FOLDER, playlist_name)
         songs = [
             os.path.join(playlist_folder_path, f) for f in
-                os.listdir(playlist_folder_path) if f.endswith(".mp3")
+                os.listdir(playlist_folder_path) if f.lower().endswith(tuple(MUSIC_ALLOWED_EXTENSIONS))
         ]
         songs_length = len(songs)
 
@@ -238,7 +238,12 @@ class Radio(commands.Cog):
         voice_client: Optional[discord.VoiceClient] = ctx.voice_client
         if voice_client and voice_client.is_playing():
             voice_client.stop()
-            await ctx.message.add_reaction("⏭️")
+            if not ctx.interaction:
+                await ctx.message.add_reaction("⏭️")
+
+            await ctx.send(embed=discord.Embed(
+                title="SALTEANDO..."
+            ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
         else:
             await ctx.send(embed=discord.Embed(
                 title="❌ Error",
@@ -276,7 +281,7 @@ class Radio(commands.Cog):
 
         # * Find all the songs first...
         for f in os.listdir(playlist_folder_path):
-            if f.endswith(".mp3"): songs.append(os.path.basename(f))
+            if f.lower().endswith(tuple(MUSIC_ALLOWED_EXTENSIONS)): songs.append(os.path.basename(f))
 
         # * Filter songs by name
         if music_name:
@@ -294,8 +299,7 @@ class Radio(commands.Cog):
 
         await PaginationManager.builder(
             ctx=ctx,
-            bot=self.bot,
-            title=f"🎶 Resultados de búsqueda {music_name or "-*general*-"} en 📂 {playlist_name}",
+            title=f"🎶 Resultados de búsqueda {f"\"{music_name}\"" or "general"} en 📂 {playlist_name}",
             data=songs,
             for_each_field_name=lambda s: f"♪ {s}",
             for_each_field_value=lambda _: "",
@@ -316,10 +320,9 @@ class Radio(commands.Cog):
 
         await PaginationManager.builder(
             ctx=ctx,
-            bot=self.bot,
             title="Lista de rolas en la cola",
             data=queue,
-            for_each_field_name=lambda queue_el: f"{queue.index(queue_el) or "▶"} | {queue_el.music_requested}",
+            for_each_field_name=lambda queue_el: f"{queue.index(queue_el) or "NEXT"} | {queue_el.music_requested}",
             for_each_field_value=lambda queue_el: queue_el.user_name,
             page=page
         )
@@ -337,7 +340,7 @@ class Radio(commands.Cog):
                     title="Reproduciendo",
                     description=current.music_requested,
                     color=discord.Color.dark_gray()
-                ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url)
+                ).set_author(name=f"Agregado a la cola por {current.user_name}")
             )
         else:
             await ctx.send(
@@ -357,7 +360,7 @@ class Radio(commands.Cog):
             element = queue.pop(index)
             queue.insert(0, element)
             await ctx.send(embed=discord.Embed(
-                title=f"{element.music_requested} puesto primero a escuchar... que tramposo que sos",
+                title=f"*{element.music_requested}*, puesto primero a escuchar... que tramposo que sos",
                 description=f"La rola se escuchará después de\n\n {self.get_current().music_requested}",
             ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
 
@@ -369,9 +372,14 @@ class Radio(commands.Cog):
         queue = self.get_queue()
         if 0 <= index < len(queue):
             element = queue.pop(index)
+            await ctx.send(embed=discord.Embed(title=element.music_requested)
+                .set_footer(text="Eliminado de la cola")
+                .set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
+        else:
             await ctx.send(embed=discord.Embed(
-                title=f"{element.music_requested} | eliminado de la cola ",
-            ).set_author(name=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url))
+                title="Indice no encontrado en la cola",
+                description="Intenta colocar un indice dentro de la cola"
+            ))
 
 
 async def setup(bot):
